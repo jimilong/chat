@@ -59,7 +59,10 @@ func handleTimeout(timeout chan bool, in chan bool) {
 	for {
 		select {
 		case msg := <-in:
-			msgs = append(msgs, msg)
+			if len(msgs) < 1 {
+				msgs = append(msgs, msg)
+			}
+
 			fmt.Println(msgs)
 		case <-tick:
 			if len(msgs) == 0 {
