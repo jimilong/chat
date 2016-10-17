@@ -2,25 +2,28 @@ package main
 
 import (
 	"fmt"
-	"net"
+	//"net"
 	//"time"
+	"hash/crc32"
 )
 
 func main() {
-	conn, _ := net.Dial("tcp", "127.0.0.1:8000")
-	buf := make([]byte, 32*1024)
+	// conn, _ := net.Dial("tcp", "127.0.0.1:8000")
+	// buf := make([]byte, 32*1024)
 
-	for {
-		fmt.Println("loop start")
-		nr, er := conn.Read(buf)
-		if nr > 0 {
-			fmt.Println(buf[:nr])
-		}
-		if er != nil {
-			fmt.Println(er)
-			break
-		}
-	}
+	// for {
+	// 	fmt.Println("loop start")
+	// 	nr, er := conn.Read(buf)
+	// 	if nr > 0 {
+	// 		fmt.Println(buf[:nr])
+	// 	}
+	// 	if er != nil {
+	// 		fmt.Println(er)
+	// 		break
+	// 	}
+	// }
+
+	fmt.Println(crc32.ChecksumIEEE([]byte("aaa")))
 
 	fmt.Println("over")
 

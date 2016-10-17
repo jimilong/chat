@@ -6,51 +6,50 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"time"
+	//"time"
 )
 
 var quitSemaphore chan bool
 
 func main() {
-	//for i := 0; i < 5000; i++ {
-	go openConn()
-	//}
-	// b := []byte("time\n")
-	// conn.Write(b)
-	var msg string
-	fmt.Scanln(&msg)
-	<-quitSemaphore
-}
-
-func openConn() {
 	var tcpAddr *net.TCPAddr
+	quitSemaphore = make(chan bool)
 	tcpAddr, _ = net.ResolveTCPAddr("tcp", "127.0.0.1:9999")
 
 	conn, _ := net.DialTCP("tcp", nil, tcpAddr)
-	defer conn.Close()
 	fmt.Println("connected!")
 
-	go onMessageRecived(conn)
-	go sendMessage(conn)
+	go onMsgRecv(conn)
+	go sendMsg(conn)
+
 	<-quitSemaphore
 }
 
-func sendMessage(conn *net.TCPConn) {
+func sendMsg(conn *net.TCPConn) {
+	msg := make([]byte, 0, 8*1024)
+	reader := bufio.NewReader(os.Stdin)
+
 	for {
-		time.Sleep(1 * time.Second)
-		// var msg string
-		// fmt.Scanln(&msg)
-		// fmt.Println(msg)
-		var msg []byte
-		n, _ := os.Stdin.Read(msg)
+		msg, _, _ = reader.ReadLine()
 
-		b, _ := protocal.Pack(string(msg[:n]))
-
-		conn.Write(b)
+		//fmt.Println(string(msg))
+		if len(msg) > 0 {
+			b, err := protocal.Pack(string(msg), "test.service", 111)
+			if err != nil {
+				quitSemaphore <- true
+				break
+			}
+			_, err = conn.Write(b)
+			if err != nil {
+				quitSemaphore <- true
+				break
+			}
+			msg = msg[:0]
+		}
 	}
 }
 
-func onMessageRecived(conn *net.TCPConn) {
+func onMsgRecv(conn *net.TCPConn) {
 	reader := bufio.NewReader(conn)
 	for {
 		msg, err := protocal.Unpack(reader)

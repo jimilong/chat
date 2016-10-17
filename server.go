@@ -46,7 +46,7 @@ func handleConn(conn *net.TCPConn) {
 		}
 		fmt.Println(conn.RemoteAddr().String() + ":" + string(message))
 
-		b, err := protocal.Pack(conn.RemoteAddr().String() + ":" + string(message))
+		b, err := protocal.Pack(conn.RemoteAddr().String()+":"+string(message), "aa", 111)
 		if err != nil {
 			continue
 		}
