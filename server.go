@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/golang/protobuf/proto"
 	"net"
+	"time"
 )
 
 var ConnMap map[string]*net.TCPConn
@@ -34,11 +35,51 @@ func main() {
 }
 
 func handleConn(conn *net.TCPConn) {
-	ipStr := conn.RemoteAddr().String()
+	timeout := make(chan bool)
+	in := make(chan bool)
+
 	defer func() {
+		ipStr := conn.RemoteAddr().String()
 		fmt.Println("disconnected :" + ipStr)
 		conn.Close()
 	}()
+
+	go handleTimeout(timeout, in)
+	go handleMsg(conn, in)
+
+	<-timeout
+}
+
+func handleTimeout(timeout chan bool, in chan bool) {
+	tick := time.Tick(30 * time.Second)
+	msgs := make([]bool, 0, 10)
+	flag := false
+	for {
+		select {
+		case msg := <-in:
+			if len(msgs) < 1 {
+				msgs = append(msgs, msg)
+			}
+
+			fmt.Println(msgs)
+		case <-tick:
+			if len(msgs) == 0 {
+				fmt.Println("time-out")
+				timeout <- true
+				flag = true
+			} else {
+				msgs = msgs[:0]
+			}
+		}
+		if flag {
+			break
+		}
+	}
+	fmt.Println("handleTimeout over 88")
+}
+
+func handleMsg(conn net.Conn, in chan bool) {
+	//ipStr := conn.RemoteAddr().String()
 	reader := bufio.NewReader(conn)
 
 	for {
@@ -46,6 +87,9 @@ func handleConn(conn *net.TCPConn) {
 		if err != nil {
 			return
 		}
+		//通知超时处理方法
+		in <- true
+
 		//解码
 		j2 := &example.MyData{}
 		err = proto.Unmarshal([]byte(message), j2)
