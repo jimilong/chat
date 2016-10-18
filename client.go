@@ -3,6 +3,7 @@ package main
 import (
 	"./protocal"
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -10,6 +11,11 @@ import (
 )
 
 var quitSemaphore chan bool
+
+type MyData struct {
+	Client string `json:"client"`
+	Input  string `json:"input"`
+}
 
 func main() {
 	var tcpAddr *net.TCPAddr
@@ -32,9 +38,17 @@ func sendMsg(conn *net.TCPConn) {
 	for {
 		msg, _, _ = reader.ReadLine()
 
+		var aa MyData
+		aa.Input = string(msg)
+		aa.Client = "longmin"
+		result, err := json.Marshal(aa)
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		//fmt.Println(string(msg))
 		if len(msg) > 0 {
-			b, err := protocal.Pack(string(msg), "test.service", 111)
+			b, err := protocal.Pack(string(result), "test.service", 111)
 			if err != nil {
 				quitSemaphore <- true
 				break
@@ -53,10 +67,22 @@ func onMsgRecv(conn *net.TCPConn) {
 	reader := bufio.NewReader(conn)
 	for {
 		msg, err := protocal.Unpack(reader)
-		fmt.Println(msg)
 		if err != nil {
 			quitSemaphore <- true
 			break
 		}
+		fmt.Println(msg)
+
+		j2 := make(map[string]interface{})
+		err = json.Unmarshal([]byte(msg), &j2)
+
+		if err != nil {
+			fmt.Println(err)
+			quitSemaphore <- true
+			break
+		}
+
+		fmt.Println(j2["input"])
+
 	}
 }
