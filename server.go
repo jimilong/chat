@@ -1,9 +1,11 @@
 package main
 
 import (
-	"./protocal"
 	"bufio"
+	"chat/protobuf/example"
+	"chat/protocal"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"net"
 )
 
@@ -44,7 +46,14 @@ func handleConn(conn *net.TCPConn) {
 		if err != nil {
 			return
 		}
-		fmt.Println(conn.RemoteAddr().String() + ":" + string(message))
+		//解码
+		j2 := &example.MyData{}
+		err = proto.Unmarshal([]byte(message), j2)
+		if err != nil {
+			continue
+		}
+
+		fmt.Println(j2.Client + ":" + j2.Input)
 
 		//b, err := protocal.Pack(conn.RemoteAddr().String()+":"+string(message), "aa", 111)
 		b, err := protocal.Pack(string(message), "aa", 111)

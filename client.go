@@ -1,21 +1,18 @@
 package main
 
 import (
-	"./protocal"
 	"bufio"
-	"encoding/json"
+	"chat/protobuf/example"
+	"chat/protocal"
+	//"encoding/json"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"net"
 	"os"
 	//"time"
 )
 
 var quitSemaphore chan bool
-
-type MyData struct {
-	Client string `json:"client"`
-	Input  string `json:"input"`
-}
 
 func main() {
 	var tcpAddr *net.TCPAddr
@@ -38,10 +35,12 @@ func sendMsg(conn *net.TCPConn) {
 	for {
 		msg, _, _ = reader.ReadLine()
 
-		var aa MyData
-		aa.Input = string(msg)
-		aa.Client = "longmin"
-		result, err := json.Marshal(aa)
+		aa := &example.MyData{
+			Client: "longmin",
+			Input:  string(msg),
+		}
+		//编码
+		result, err := proto.Marshal(aa)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -71,10 +70,10 @@ func onMsgRecv(conn *net.TCPConn) {
 			quitSemaphore <- true
 			break
 		}
-		fmt.Println(msg)
-
-		j2 := make(map[string]interface{})
-		err = json.Unmarshal([]byte(msg), &j2)
+		//fmt.Println(msg)
+		//解码
+		j2 := &example.MyData{}
+		err = proto.Unmarshal([]byte(msg), j2)
 
 		if err != nil {
 			fmt.Println(err)
@@ -82,7 +81,7 @@ func onMsgRecv(conn *net.TCPConn) {
 			break
 		}
 
-		fmt.Println(j2["input"])
+		fmt.Println(j2.Client+":", j2.Input)
 
 	}
 }
